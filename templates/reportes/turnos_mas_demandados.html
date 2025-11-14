@@ -1,0 +1,34 @@
+{% extends "reportes/base_report.html" %}
+
+{% block report_title %}Turnos Más Demandados{% endblock %}
+{% block report_subtitle %}Ranking de turnos ordenados por cantidad de reservas{% endblock %}
+
+{% block report_content %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Ranking</th>
+                <th>Turno</th>
+                <th>Horario</th>
+                <th>Total Reservas</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in results %}
+            <tr>
+                <td><strong>{{ loop.index }}</strong></td>
+                <td>Turno #{{ r.id_turno }}</td>
+                <td>{{ r.hora_inicio }} - {{ r.hora_fin }}</td>
+                <td><strong>{{ r.total_reservas }}</strong></td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center">No hay datos disponibles.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

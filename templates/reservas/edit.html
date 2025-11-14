@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Reserva - UCU{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> Editar Reserva #{{ reserva.id_reserva }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>Sala:</strong> {{ reserva.nombre_sala }} - {{ reserva.edificio }}<br>
+                    <strong>Fecha:</strong> {{ reserva.fecha }}<br>
+                    <strong>Estado actual:</strong> 
+                    {% if reserva.estado == 'activa' %}
+                        <span class="badge bg-success">Activa</span>
+                    {% elif reserva.estado == 'cancelada' %}
+                        <span class="badge bg-danger">Cancelada</span>
+                    {% elif reserva.estado == 'sin asistencia' %}
+                        <span class="badge bg-warning">Sin Asistencia</span>
+                    {% elif reserva.estado == 'finalizada' %}
+                        <span class="badge bg-info">Finalizada</span>
+                    {% endif %}
+                </div>
+                <hr>
+                <h5>Participantes:</h5>
+                <ul>
+                    {% for p in participantes %}
+                    <li>{{ p.nombre }} {{ p.apellido }} ({{ p.ci_participante }}) - 
+                        {% if p.asistencia %}
+                            <span class="badge bg-success">Asistió</span>
+                        {% else %}
+                            <span class="badge bg-danger">No asistió</span>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                <hr>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="estado" class="form-label">Cambiar Estado *</label>
+                        <select class="form-select" id="estado" name="estado" required>
+                            <option value="activa" {% if reserva.estado == 'activa' %}selected{% endif %}>Activa</option>
+                            <option value="cancelada" {% if reserva.estado == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                            <option value="finalizada" {% if reserva.estado == 'finalizada' %}selected{% endif %}>Finalizada</option>
+                            <option value="sin asistencia" {% if reserva.estado == 'sin asistencia' %}selected{% endif %}>Sin Asistencia</option>
+                        </select>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        <a href="{{ url_for('list_reservas') }}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

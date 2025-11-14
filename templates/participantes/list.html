@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Participantes - UCU{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-people"></i> Participantes</h2>
+    <a href="{{ url_for('create_participante') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Crear Participante
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>CI</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Email</th>
+                        <th>Programas</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in participantes %}
+                    <tr>
+                        <td>{{ p.ci }}</td>
+                        <td>{{ p.nombre }}</td>
+                        <td>{{ p.apellido }}</td>
+                        <td>{{ p.email }}</td>
+                        <td>{{ p.programas or 'Sin programa' }}</td>
+                        <td>
+                            <a href="{{ url_for('edit_participante', ci=p.ci) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                            <form method="POST" action="{{ url_for('delete_participante', ci=p.ci) }}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar este participante?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">No hay participantes registrados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,42 @@
+{% extends "reportes/base_report.html" %}
+
+{% block report_title %}Reservas por Carrera y Facultad{% endblock %}
+{% block report_subtitle %}Cantidad de reservas agrupadas por programa académico y facultad{% endblock %}
+
+{% block report_content %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Facultad</th>
+                <th>Programa</th>
+                <th>Tipo</th>
+                <th>Total Reservas</th>
+                <th>Total Participantes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in results %}
+            <tr>
+                <td>{{ r.facultad }}</td>
+                <td>{{ r.nombre_programa }}</td>
+                <td>
+                    {% if r.tipo == 'grado' %}
+                        <span class="badge bg-primary">Grado</span>
+                    {% else %}
+                        <span class="badge bg-info">Posgrado</span>
+                    {% endif %}
+                </td>
+                <td><strong>{{ r.total_reservas }}</strong></td>
+                <td>{{ r.total_participantes }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center">No hay datos disponibles.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

@@ -1,0 +1,59 @@
+{% extends "reportes/base_report.html" %}
+
+{% block report_title %}Eficiencia de Uso de Salas{% endblock %}
+{% block report_subtitle %}Análisis de eficiencia y tasa de uso de cada sala{% endblock %}
+
+{% block report_content %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Sala</th>
+                <th>Edificio</th>
+                <th>Capacidad</th>
+                <th>Tipo</th>
+                <th>Total Reservas</th>
+                <th>Promedio Participantes</th>
+                <th>Reservas Completadas</th>
+                <th>Reservas No Asistidas</th>
+                <th>Tasa de Uso</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in results %}
+            <tr>
+                <td>{{ r.nombre_sala }}</td>
+                <td>{{ r.edificio }}</td>
+                <td>{{ r.capacidad }}</td>
+                <td>
+                    {% if r.tipo_sala == 'libre' %}
+                        <span class="badge bg-success">Libre</span>
+                    {% elif r.tipo_sala == 'posgrado' %}
+                        <span class="badge bg-info">Posgrado</span>
+                    {% elif r.tipo_sala == 'docente' %}
+                        <span class="badge bg-warning">Docente</span>
+                    {% endif %}
+                </td>
+                <td>{{ r.total_reservas or 0 }}</td>
+                <td>{{ "%.2f"|format(r.promedio_participantes or 0) }}</td>
+                <td><span class="badge bg-success">{{ r.reservas_completadas or 0 }}</span></td>
+                <td><span class="badge bg-danger">{{ r.reservas_no_asistidas or 0 }}</span></td>
+                <td>
+                    <strong>{{ r.tasa_uso or 0 }}%</strong>
+                    <div class="progress mt-1" style="height: 20px;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ r.tasa_uso or 0 }}%">
+                            {{ r.tasa_uso or 0 }}%
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9" class="text-center">No hay datos disponibles.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

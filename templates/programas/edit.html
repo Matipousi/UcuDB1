@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Programa Académico - UCU{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-pencil"></i> Editar Programa Académico</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="nombre_programa" class="form-label">Nombre del Programa *</label>
+                        <input type="text" class="form-control" id="nombre_programa" name="nombre_programa" value="{{ programa.nombre_programa }}" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_facultad" class="form-label">Facultad *</label>
+                            <select class="form-select" id="id_facultad" name="id_facultad" required>
+                                <option value="">Seleccionar facultad...</option>
+                                {% for facultad in facultades %}
+                                <option value="{{ facultad.id_facultad }}" {% if facultad.id_facultad == programa.id_facultad %}selected{% endif %}>
+                                    {{ facultad.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo" class="form-label">Tipo *</label>
+                            <select class="form-select" id="tipo" name="tipo" required>
+                                <option value="grado" {% if programa.tipo == 'grado' %}selected{% endif %}>Grado</option>
+                                <option value="posgrado" {% if programa.tipo == 'posgrado' %}selected{% endif %}>Posgrado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        <a href="{{ url_for('list_programas') }}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

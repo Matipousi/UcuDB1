@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Agregar Programa Académico - UCU{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-mortarboard"></i> Agregar Programa Académico</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> <strong>Importante:</strong> 
+                    Necesitas tener un programa académico asociado para poder hacer reservas de salas.
+                </div>
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre_programa" class="form-label">Programa Académico *</label>
+                            <select class="form-select" id="nombre_programa" name="nombre_programa" required>
+                                <option value="">Seleccionar programa...</option>
+                                {% for programa in programas %}
+                                <option value="{{ programa.nombre_programa }}" data-facultad="{{ programa.id_facultad }}">
+                                    {{ programa.nombre_facultad }} - {{ programa.nombre_programa }} ({{ programa.tipo }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <input type="hidden" id="id_facultad" name="id_facultad">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="rol" class="form-label">Rol *</label>
+                            <select class="form-select" id="rol" name="rol" required>
+                                <option value="alumno">Alumno</option>
+                                <option value="docente">Docente</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Agregar Programa</button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('nombre_programa').addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    const idFacultad = selected.dataset.facultad || '';
+    document.getElementById('id_facultad').value = idFacultad;
+    console.log('Selected programa:', selected.value, 'id_facultad:', idFacultad);
+});
+
+// Also set on form submit to ensure it's set
+document.querySelector('form').addEventListener('submit', function(e) {
+    const programaSelect = document.getElementById('nombre_programa');
+    const selected = programaSelect.options[programaSelect.selectedIndex];
+    const idFacultad = selected.dataset.facultad || '';
+    document.getElementById('id_facultad').value = idFacultad;
+    
+    if (!idFacultad && programaSelect.value) {
+        console.error('Error: id_facultad not set for programa:', programaSelect.value);
+        alert('Error: Por favor, selecciona un programa válido.');
+        e.preventDefault();
+        return false;
+    }
+});
+</script>
+{% endblock %}
+

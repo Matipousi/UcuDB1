@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Participante - UCU{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> Crear Participante</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="ci" class="form-label">CI *</label>
+                            <input type="text" class="form-control" id="ci" name="ci" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="apellido" class="form-label">Apellido *</label>
+                            <input type="text" class="form-control" id="apellido" name="apellido" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña (opcional, para crear login)</label>
+                        <input type="password" class="form-control" id="password" name="password">
+                    </div>
+                    <hr>
+                    <h5>Programa Académico (Opcional)</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre_programa" class="form-label">Programa</label>
+                            <select class="form-select" id="nombre_programa" name="nombre_programa">
+                                <option value="">Seleccionar programa...</option>
+                                {% for programa in programas %}
+                                <option value="{{ programa.nombre_programa }}" data-facultad="{{ programa.id_facultad }}">
+                                    {{ programa.nombre_facultad }} - {{ programa.nombre_programa }} ({{ programa.tipo }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <input type="hidden" id="id_facultad" name="id_facultad">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="rol" class="form-label">Rol</label>
+                            <select class="form-select" id="rol" name="rol">
+                                <option value="alumno">Alumno</option>
+                                <option value="docente">Docente</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Crear Participante</button>
+                        <a href="{{ url_for('list_participantes') }}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('nombre_programa').addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    document.getElementById('id_facultad').value = selected.dataset.facultad || '';
+});
+</script>
+{% endblock %}
+

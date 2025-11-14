@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Reservas - UCU{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-calendar-check"></i> Reservas</h2>
+    <a href="{{ url_for('create_reserva') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Crear Reserva
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Sala</th>
+                        <th>Edificio</th>
+                        <th>Fecha</th>
+                        <th>Horario</th>
+                        <th>Participantes</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reservas %}
+                    <tr>
+                        <td>{{ r.id_reserva }}</td>
+                        <td>{{ r.nombre_sala }}</td>
+                        <td>{{ r.edificio }}</td>
+                        <td>{{ r.fecha }}</td>
+                        <td>{{ r.hora_inicio }} - {{ r.hora_fin }}</td>
+                        <td>{{ r.num_participantes }}</td>
+                        <td>
+                            {% if r.estado == 'activa' %}
+                                <span class="badge bg-success">Activa</span>
+                            {% elif r.estado == 'cancelada' %}
+                                <span class="badge bg-danger">Cancelada</span>
+                            {% elif r.estado == 'sin asistencia' %}
+                                <span class="badge bg-warning">Sin Asistencia</span>
+                            {% elif r.estado == 'finalizada' %}
+                                <span class="badge bg-info">Finalizada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('edit_reserva', id_reserva=r.id_reserva) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                            <a href="{{ url_for('update_attendance', id_reserva=r.id_reserva) }}" class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-check-circle"></i> Asistencia
+                            </a>
+                            <form method="POST" action="{{ url_for('delete_reserva', id_reserva=r.id_reserva) }}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar esta reserva?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center">No hay reservas registradas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

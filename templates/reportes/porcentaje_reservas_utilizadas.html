@@ -1,0 +1,75 @@
+{% extends "reportes/base_report.html" %}
+
+{% block report_title %}Porcentaje de Reservas Utilizadas{% endblock %}
+{% block report_subtitle %}Análisis de reservas efectivamente utilizadas vs. canceladas/no asistidas{% endblock %}
+
+{% block report_content %}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Total Reservas</h5>
+                <h2 class="text-primary">{{ results.total_reservas or 0 }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Finalizadas</h5>
+                <h2 class="text-success">{{ results.reservas_finalizadas or 0 }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Canceladas</h5>
+                <h2 class="text-danger">{{ results.reservas_canceladas or 0 }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Sin Asistencia</h5>
+                <h2 class="text-warning">{{ results.reservas_sin_asistencia or 0 }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Porcentaje de Reservas Utilizadas</h5>
+            </div>
+            <div class="card-body text-center">
+                <h1 class="display-4 text-success">{{ results.porcentaje_utilizadas or 0 }}%</h1>
+                <div class="progress mt-3" style="height: 30px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ results.porcentaje_utilizadas or 0 }}%">
+                        {{ results.porcentaje_utilizadas or 0 }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Porcentaje de Reservas No Utilizadas</h5>
+            </div>
+            <div class="card-body text-center">
+                <h1 class="display-4 text-danger">{{ results.porcentaje_no_utilizadas or 0 }}%</h1>
+                <div class="progress mt-3" style="height: 30px;">
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ results.porcentaje_no_utilizadas or 0 }}%">
+                        {{ results.porcentaje_no_utilizadas or 0 }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

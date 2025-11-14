@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Crear Sala - UCU{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-door-open"></i> Crear Sala</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre_sala" class="form-label">Nombre de la Sala *</label>
+                            <input type="text" class="form-control" id="nombre_sala" name="nombre_sala" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edificio" class="form-label">Edificio *</label>
+                            <select class="form-select" id="edificio" name="edificio" required>
+                                <option value="">Seleccionar edificio...</option>
+                                {% for edificio in edificios %}
+                                <option value="{{ edificio.nombre_edificio }}">{{ edificio.nombre_edificio }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="capacidad" class="form-label">Capacidad *</label>
+                            <input type="number" class="form-control" id="capacidad" name="capacidad" min="1" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_sala" class="form-label">Tipo de Sala *</label>
+                            <select class="form-select" id="tipo_sala" name="tipo_sala" required>
+                                <option value="libre">Libre</option>
+                                <option value="posgrado">Exclusiva de Posgrado</option>
+                                <option value="docente">Exclusiva de Docentes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Crear Sala</button>
+                        <a href="{{ url_for('list_salas') }}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

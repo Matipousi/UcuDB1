@@ -1,0 +1,46 @@
+{% extends "reportes/base_report.html" %}
+
+{% block report_title %}Salas Más Reservadas{% endblock %}
+{% block report_subtitle %}Ranking de salas ordenadas por cantidad de reservas{% endblock %}
+
+{% block report_content %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Ranking</th>
+                <th>Sala</th>
+                <th>Edificio</th>
+                <th>Tipo</th>
+                <th>Capacidad</th>
+                <th>Total Reservas</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in results %}
+            <tr>
+                <td><strong>{{ loop.index }}</strong></td>
+                <td>{{ r.nombre_sala }}</td>
+                <td>{{ r.edificio }}</td>
+                <td>
+                    {% if r.tipo_sala == 'libre' %}
+                        <span class="badge bg-success">Libre</span>
+                    {% elif r.tipo_sala == 'posgrado' %}
+                        <span class="badge bg-info">Posgrado</span>
+                    {% elif r.tipo_sala == 'docente' %}
+                        <span class="badge bg-warning">Docente</span>
+                    {% endif %}
+                </td>
+                <td>{{ r.capacidad }}</td>
+                <td><strong>{{ r.total_reservas }}</strong></td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center">No hay datos disponibles.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

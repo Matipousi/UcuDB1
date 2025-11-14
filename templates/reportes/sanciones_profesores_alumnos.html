@@ -1,0 +1,46 @@
+{% extends "reportes/base_report.html" %}
+
+{% block report_title %}Sanciones para Profesores y Alumnos{% endblock %}
+{% block report_subtitle %}Cantidad de sanciones activas por rol y tipo de programa{% endblock %}
+
+{% block report_content %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Rol</th>
+                <th>Tipo Programa</th>
+                <th>Total Sanciones</th>
+                <th>Participantes Sancionados</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in results %}
+            <tr>
+                <td>
+                    {% if r.rol == 'docente' %}
+                        <span class="badge bg-warning">Docente</span>
+                    {% else %}
+                        <span class="badge bg-primary">Alumno</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if r.tipo == 'grado' %}
+                        <span class="badge bg-info">Grado</span>
+                    {% else %}
+                        <span class="badge bg-success">Posgrado</span>
+                    {% endif %}
+                </td>
+                <td><strong>{{ r.total_sanciones or 0 }}</strong></td>
+                <td>{{ r.participantes_sancionados or 0 }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center">No hay datos disponibles.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

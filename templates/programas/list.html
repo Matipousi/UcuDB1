@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Programas Académicos - UCU{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-mortarboard"></i> Programas Académicos</h2>
+    <a href="{{ url_for('create_programa') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Crear Programa Académico
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nombre del Programa</th>
+                        <th>Facultad</th>
+                        <th>Tipo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for programa in programas %}
+                    <tr>
+                        <td>{{ programa.nombre_programa }}</td>
+                        <td>{{ programa.nombre_facultad }}</td>
+                        <td>
+                            {% if programa.tipo == 'grado' %}
+                                <span class="badge bg-primary">Grado</span>
+                            {% else %}
+                                <span class="badge bg-info">Posgrado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('edit_programa', nombre_programa=programa.nombre_programa, id_facultad=programa.id_facultad) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                            <form method="POST" action="{{ url_for('delete_programa', nombre_programa=programa.nombre_programa, id_facultad=programa.id_facultad) }}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar este programa académico?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center">No hay programas académicos registrados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,38 @@
+{% extends "reportes/base_report.html" %}
+
+{% block report_title %}Promedio de Participantes por Sala{% endblock %}
+{% block report_subtitle %}Análisis del promedio de participantes por sala{% endblock %}
+
+{% block report_content %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Sala</th>
+                <th>Edificio</th>
+                <th>Capacidad</th>
+                <th>Total Reservas</th>
+                <th>Total Participantes</th>
+                <th>Promedio Participantes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in results %}
+            <tr>
+                <td>{{ r.nombre_sala }}</td>
+                <td>{{ r.edificio }}</td>
+                <td>{{ r.capacidad }}</td>
+                <td>{{ r.total_reservas }}</td>
+                <td>{{ r.total_participantes }}</td>
+                <td><strong>{{ r.promedio_participantes }}</strong></td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center">No hay datos disponibles.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

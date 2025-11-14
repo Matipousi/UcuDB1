@@ -1,0 +1,48 @@
+{% extends "reportes/base_report.html" %}
+
+{% block report_title %}Participantes Más Activos{% endblock %}
+{% block report_subtitle %}Top 20 participantes con más reservas{% endblock %}
+
+{% block report_content %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Ranking</th>
+                <th>CI</th>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Email</th>
+                <th>Total Reservas</th>
+                <th>Total Asistencias</th>
+                <th>Total Sanciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in results %}
+            <tr>
+                <td><strong>{{ loop.index }}</strong></td>
+                <td>{{ r.ci }}</td>
+                <td>{{ r.nombre }}</td>
+                <td>{{ r.apellido }}</td>
+                <td>{{ r.email }}</td>
+                <td><strong>{{ r.total_reservas }}</strong></td>
+                <td>{{ r.total_asistencias or 0 }}</td>
+                <td>
+                    {% if r.total_sanciones and r.total_sanciones > 0 %}
+                        <span class="badge bg-danger">{{ r.total_sanciones }}</span>
+                    {% else %}
+                        <span class="badge bg-success">0</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8" class="text-center">No hay datos disponibles.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
