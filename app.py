@@ -12,24 +12,64 @@ from main import DatabaseManager, AuthManager, ReservationManager, ReportManager
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
-# Database configuration - can be set via environment variables
-DB_CONFIG = {
-    'host': os.environ.get('DB_HOST', '100.100.101.1'),
-    'user': os.environ.get('DB_USER', 'root'),
-    'password': os.environ.get('DB_PASSWORD', '220505'),
-    'database': os.environ.get('DB_NAME', 'UCU_SalasDeEstudio')
-}
+# Database configuration - will be set dynamically
+DB_CONFIG = {}
 
-# Global database manager
-db = DatabaseManager(**DB_CONFIG)
+# Global database manager (will be initialized after DB_CONFIG is set)
+db = None
 auth = None
 reservation = None
 report = None
 
 
+def get_db_config():
+    """Prompt user for database configuration"""
+    # Built-in default credentials
+    builtin_config = {
+        'host': '100.100.101.1',
+        'user': 'root',
+        'password': '220505',
+        'database': 'UCU_SalasDeEstudio'
+    }
+    
+    print("\n" + "="*60)
+    print("Database Configuration")
+    print("="*60)
+    print("\nChoose an option:")
+    print("1. Use built-in access credentials")
+    print("2. Input new credentials")
+    
+    while True:
+        choice = input("\nEnter your choice (1 or 2): ").strip()
+        
+        if choice == '1':
+            print("\nUsing built-in credentials...")
+            return builtin_config
+        elif choice == '2':
+            print("\nPlease enter database credentials (press Enter to use default):")
+            host = input("Host (default: 100.100.101.1): ").strip() or '100.100.101.1'
+            user = input("User (default: root): ").strip() or 'root'
+            password = input("Password (default: 220505): ").strip() or '220505'
+            database = input("Database (default: UCU_SalasDeEstudio): ").strip() or 'UCU_SalasDeEstudio'
+            
+            return {
+                'host': host,
+                'user': user,
+                'password': password,
+                'database': database
+            }
+        else:
+            print("Invalid choice. Please enter 1 or 2.")
+
+
 def init_db():
     """Initialize database connection and managers"""
     global db, auth, reservation, report
+    
+    # Initialize database manager if not already done
+    if db is None:
+        db = DatabaseManager(**DB_CONFIG)
+    
     if not db.connection or not db.connection.is_connected():
         db.config.update(DB_CONFIG)
         if not db.connect():
@@ -60,7 +100,7 @@ def login_required(f):
 @app.before_request
 def before_request():
     """Initialize database before each request"""
-    if not db.connection or not db.connection.is_connected():
+    if db is None or not db.connection or not db.connection.is_connected():
         init_db()
 
 
@@ -1159,8 +1199,35 @@ def reporte_eficiencia_uso_salas():
 
 
 if __name__ == '__main__':
+    import os
+    import json
+    
+    # Flask's reloader runs the main block twice (parent and child process)
+    # Use environment variable to cache config and avoid double prompts
+    config_env_key = 'FLASK_DB_CONFIG'
+    
+    # Check if config is already cached in environment variable
+    if config_env_key in os.environ:
+        # Load config from environment variable
+        DB_CONFIG.update(json.loads(os.environ[config_env_key]))
+    else:
+        # Get database configuration from user
+        DB_CONFIG.update(get_db_config())
+        # Cache it in environment variable for reloader
+        os.environ[config_env_key] = json.dumps(DB_CONFIG)
+    
+    # Initialize database manager with the configuration
+    db = DatabaseManager(**DB_CONFIG)
+    
+    # Initialize database connection and managers
     if init_db():
+        # Only show success message in the main process (child of reloader)
+        if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+            print("\n" + "="*60)
+            print("Database connection established successfully!")
+            print("Starting web server...")
+            print("="*60 + "\n")
         app.run(debug=True, host='0.0.0.0', port=5000)
     else:
-        print("Error: Could not connect to database. Please check your configuration.")
+        print("\nError: Could not connect to database. Please check your configuration.")
 

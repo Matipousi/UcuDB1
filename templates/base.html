@@ -16,11 +16,19 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .navbar {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            background: #052e66;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .navbar-brand {
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .navbar-brand img {
+            height: 40px;
+            width: auto;
+            filter: brightness(0) invert(1);
         }
         .card {
             border: none;
@@ -60,7 +68,8 @@
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="bi bi-building"></i> UCU - Salas de Estudio
+                <img src="{{ url_for('static', filename='UCU.png') }}" alt="UCU Logo">
+                <span>UCU - Salas de Estudio</span>
             </a>
             {% if session.user %}
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
