@@ -82,13 +82,15 @@
                             <i class="bi bi-house"></i> Dashboard
                         </a>
                     </li>
+                    {% if session.user.is_admin %}
+                    {# Admin Navigation #}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-people"></i> Participantes
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('list_participantes') }}">Listar</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('create_participante') }}">Crear</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_list_participantes') }}">Listar</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_create_participante') }}">Crear</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
@@ -96,8 +98,8 @@
                             <i class="bi bi-mortarboard"></i> Programas Académicos
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('list_programas') }}">Listar</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('create_programa') }}">Crear</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_list_programas') }}">Listar</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_create_programa') }}">Crear</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
@@ -105,8 +107,8 @@
                             <i class="bi bi-door-open"></i> Salas
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('list_salas') }}">Listar</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('create_sala') }}">Crear</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_list_salas') }}">Listar</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_create_sala') }}">Crear</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
@@ -114,8 +116,7 @@
                             <i class="bi bi-calendar-check"></i> Reservas
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('list_reservas') }}">Listar</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('create_reserva') }}">Crear</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_list_reservas') }}">Listar</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
@@ -123,8 +124,8 @@
                             <i class="bi bi-exclamation-triangle"></i> Sanciones
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('list_sanciones') }}">Listar</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('create_sancion') }}">Crear</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_list_sanciones') }}">Listar</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_create_sancion') }}">Crear</a></li>
                         </ul>
                     </li>
                     <li class="nav-item dropdown">
@@ -132,22 +133,45 @@
                             <i class="bi bi-graph-up"></i> Reportes
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('reportes') }}">Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_reportes') }}">Dashboard</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reporte_salas_mas_reservadas') }}">Salas Más Reservadas</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reporte_turnos_mas_demandados') }}">Turnos Más Demandados</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reporte_promedio_participantes_sala') }}">Promedio Participantes por Sala</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reporte_reservas_por_carrera_facultad') }}">Reservas por Carrera y Facultad</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reporte_ocupacion_por_edificio') }}">Ocupación por Edificio</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reporte_reservas_asistencias_profesores_alumnos') }}">Reservas y Asistencias</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reporte_sanciones_profesores_alumnos') }}">Sanciones</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reporte_porcentaje_reservas_utilizadas') }}">Porcentaje Reservas Utilizadas</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_reporte_salas_mas_reservadas') }}">Salas Más Reservadas</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_reporte_turnos_mas_demandados') }}">Turnos Más Demandados</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_reporte_promedio_participantes_sala') }}">Promedio Participantes por Sala</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_reporte_reservas_por_carrera_facultad') }}">Reservas por Carrera y Facultad</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_reporte_ocupacion_por_edificio') }}">Ocupación por Edificio</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_reporte_reservas_asistencias_profesores_alumnos') }}">Reservas y Asistencias</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_reporte_sanciones_profesores_alumnos') }}">Sanciones</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_reporte_porcentaje_reservas_utilizadas') }}">Porcentaje Reservas Utilizadas</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reporte_reservas_por_mes') }}">Reservas por Mes</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reporte_participantes_mas_activos') }}">Participantes Más Activos</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('reporte_eficiencia_uso_salas') }}">Eficiencia de Uso de Salas</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_reporte_reservas_por_mes') }}">Reservas por Mes</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_reporte_participantes_mas_activos') }}">Participantes Más Activos</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin_reporte_eficiencia_uso_salas') }}">Eficiencia de Uso de Salas</a></li>
                         </ul>
                     </li>
+                    {% else %}
+                    {# Regular User Navigation #}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('view_rooms') }}">
+                            <i class="bi bi-door-open"></i> Ver Salas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('make_appointment') }}">
+                            <i class="bi bi-calendar-plus"></i> Hacer Reserva
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('my_reservations') }}">
+                            <i class="bi bi-calendar-check"></i> Mis Reservas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('my_sanctions') }}">
+                            <i class="bi bi-exclamation-triangle"></i> Mis Sanciones
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item">

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - UCU{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4"><i class="bi bi-speedometer2"></i> Mi Dashboard</h2>
+    </div>
+</div>
+
+{% if not has_program %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i> <strong>Atención:</strong> Por favor, agrega tu programa académico para poder hacer reservas.
+    <a href="{{ url_for('add_program') }}" class="btn btn-sm btn-warning ms-2">Agregar Programa</a>
+</div>
+{% endif %}
+
+{% if sanciones %}
+<div class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i> <strong>Tienes sanciones activas:</strong>
+    <ul class="mb-0 mt-2">
+        {% for sancion in sanciones %}
+        <li>Desde {{ sancion.fecha_inicio }} hasta {{ sancion.fecha_fin }} 
+            {% if sancion.fecha_fin >= today %}
+                ({{ ((sancion.fecha_fin - today).days) }} días restantes)
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('my_sanctions') }}" class="btn btn-sm btn-danger mt-2">Ver Detalles</a>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-calendar-check text-primary"></i> Mis Reservas</h5>
+                <h3 class="text-primary">{{ reservas|length }}</h3>
+                <a href="{{ url_for('my_reservations') }}" class="btn btn-sm btn-outline-primary">Ver todas</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-door-open text-success"></i> Salas Disponibles</h5>
+                <h3 class="text-success">{{ salas_disponibles_count or 0 }}</h3>
+                <small class="text-muted">Disponibles ahora</small>
+                <br>
+                <a href="{{ url_for('view_rooms') }}" class="btn btn-sm btn-outline-success mt-2">Ver salas</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-exclamation-triangle text-warning"></i> Mis Sanciones</h5>
+                <h3 class="text-warning">{{ sanciones|length }}</h3>
+                <a href="{{ url_for('my_sanctions') }}" class="btn btn-sm btn-outline-warning">Ver detalles</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Acciones Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if has_program %}
+                    <a href="{{ url_for('make_appointment') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Hacer una Reserva
+                    </a>
+                    <a href="{{ url_for('view_rooms') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-door-open"></i> Ver Salas Disponibles
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('add_program') }}" class="btn btn-warning">
+                        <i class="bi bi-mortarboard"></i> Agregar Programa Académico
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Mis Reservas Recientes</h5>
+            </div>
+            <div class="card-body">
+                {% if reservas %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Sala</th>
+                                <th>Fecha</th>
+                                <th>Horario</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in reservas[:5] %}
+                            <tr>
+                                <td>{{ r.nombre_sala }}</td>
+                                <td>{{ r.fecha }}</td>
+                                <td>{{ r.hora_inicio }} - {{ r.hora_fin }}</td>
+                                <td>
+                                    {% if r.estado == 'activa' %}
+                                        <span class="badge bg-success">Activa</span>
+                                    {% elif r.estado == 'cancelada' %}
+                                        <span class="badge bg-danger">Cancelada</span>
+                                    {% elif r.estado == 'sin asistencia' %}
+                                        <span class="badge bg-warning">Sin Asistencia</span>
+                                    {% elif r.estado == 'finalizada' %}
+                                        <span class="badge bg-info">Finalizada</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <a href="{{ url_for('my_reservations') }}" class="btn btn-sm btn-outline-primary">Ver todas</a>
+                {% else %}
+                <p class="text-muted">No tienes reservas aún.</p>
+                {% if has_program %}
+                <a href="{{ url_for('make_appointment') }}" class="btn btn-sm btn-primary">Hacer mi primera reserva</a>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

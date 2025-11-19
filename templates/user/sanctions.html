@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Sanciones - UCU{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-exclamation-triangle"></i> Mis Sanciones</h2>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al Dashboard
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if sanciones %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Fecha de Inicio</th>
+                        <th>Fecha de Fin</th>
+                        <th>Duración</th>
+                        <th>Estado</th>
+                        <th>Días Restantes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sancion in sanciones %}
+                    <tr>
+                        <td>{{ sancion.fecha_inicio }}</td>
+                        <td>{{ sancion.fecha_fin }}</td>
+                        <td>{{ ((sancion.fecha_fin - sancion.fecha_inicio).days) }} días</td>
+                        <td>
+                            {% if sancion.fecha_fin >= today %}
+                                <span class="badge bg-danger">Activa</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Finalizada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if sancion.fecha_fin >= today %}
+                                <strong>{{ ((sancion.fecha_fin - today).days) }} días</strong>
+                            {% else %}
+                                Finalizada
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="alert alert-warning mt-3">
+            <i class="bi bi-info-circle"></i> <strong>Importante:</strong> 
+            Mientras tengas una sanción activa, no podrás hacer nuevas reservas de salas de estudio.
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle"></i> <strong>¡Excelente!</strong> No tienes sanciones activas.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

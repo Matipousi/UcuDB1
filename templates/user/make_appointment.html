@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Hacer Reserva - UCU{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-calendar-plus"></i> Hacer una Reserva</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre_sala" class="form-label">Sala *</label>
+                            <select class="form-select" id="nombre_sala" name="nombre_sala" required>
+                                <option value="">Seleccionar sala...</option>
+                                {% for sala in salas %}
+                                <option value="{{ sala.nombre_sala }}" 
+                                        data-edificio="{{ sala.edificio }}"
+                                        {% if request.args.get('sala') == sala.nombre_sala %}selected{% endif %}>
+                                    {{ sala.nombre_sala }} ({{ sala.edificio }}) - Capacidad: {{ sala.capacidad }} - Tipo: {{ sala.tipo_sala }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <input type="hidden" id="edificio" name="edificio" value="{{ request.args.get('edificio', '') }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha" class="form-label">Fecha *</label>
+                            <input type="date" class="form-control" id="fecha" name="fecha" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_turno" class="form-label">Turno *</label>
+                            <select class="form-select" id="id_turno" name="id_turno" required>
+                                <option value="">Seleccionar turno...</option>
+                                {% for turno in turnos %}
+                                <option value="{{ turno.id_turno }}">{{ turno.hora_inicio }} - {{ turno.hora_fin }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="participantes" class="form-label">Participantes (CIs separados por coma)</label>
+                            <input type="text" class="form-control" id="participantes" name="participantes" 
+                                   placeholder="Ej: 12345678, 87654321">
+                            <small class="form-text text-muted">Tu CI se agregará automáticamente. Opcional: agrega otros participantes separados por comas.</small>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> <strong>Recordatorio:</strong> Las reservas son por bloques de 1 hora. 
+                        Para reservar múltiples horas consecutivas, debes hacer varias reservas.
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Crear Reserva</button>
+                        <a href="{{ url_for('view_rooms') }}" class="btn btn-secondary">Ver Salas Disponibles</a>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('nombre_sala').addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    document.getElementById('edificio').value = selected.dataset.edificio || '';
+});
+
+// Set minimum date to today
+document.getElementById('fecha').min = new Date().toISOString().split('T')[0];
+
+// Pre-fill edificio if coming from rooms page
+{% if request.args.get('sala') and request.args.get('edificio') %}
+const salaSelect = document.getElementById('nombre_sala');
+if (salaSelect.value) {
+    const selected = salaSelect.options[salaSelect.selectedIndex];
+    document.getElementById('edificio').value = selected.dataset.edificio || '{{ request.args.get('edificio') }}';
+}
+{% endif %}
+</script>
+{% endblock %}
+

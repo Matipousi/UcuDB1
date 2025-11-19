@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Salas Disponibles - UCU{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-door-open"></i> Salas Disponibles</h2>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label for="fecha" class="form-label">Fecha</label>
+                <input type="date" class="form-control" id="fecha" name="fecha" value="{{ fecha }}">
+            </div>
+            <div class="col-md-4">
+                <label for="id_turno" class="form-label">Turno</label>
+                <select class="form-select" id="id_turno" name="id_turno">
+                    <option value="">Todos los turnos</option>
+                    {% for turno in turnos %}
+                    <option value="{{ turno.id_turno }}" {% if id_turno == turno.id_turno|string %}selected{% endif %}>
+                        {{ turno.hora_inicio }} - {{ turno.hora_fin }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">Filtrar</button>
+                <a href="{{ url_for('view_rooms') }}" class="btn btn-secondary">Limpiar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if salas %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Edificio</th>
+                        <th>Dirección</th>
+                        <th>Capacidad</th>
+                        <th>Tipo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sala in salas %}
+                    <tr>
+                        <td><strong>{{ sala.nombre_sala }}</strong></td>
+                        <td>{{ sala.edificio }}</td>
+                        <td>{{ sala.direccion }}</td>
+                        <td>{{ sala.capacidad }} personas</td>
+                        <td>
+                            {% if sala.tipo_sala == 'libre' %}
+                                <span class="badge bg-success">Libre</span>
+                            {% elif sala.tipo_sala == 'posgrado' %}
+                                <span class="badge bg-info">Posgrado</span>
+                            {% elif sala.tipo_sala == 'docente' %}
+                                <span class="badge bg-warning">Docente</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('make_appointment') }}?sala={{ sala.nombre_sala }}&edificio={{ sala.edificio }}" 
+                               class="btn btn-sm btn-primary">
+                                <i class="bi bi-calendar-plus"></i> Reservar
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay salas disponibles con los filtros seleccionados.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Set minimum date to today
+const fechaInput = document.getElementById('fecha');
+if (fechaInput) {
+    fechaInput.min = new Date().toISOString().split('T')[0];
+}
+</script>
+{% endblock %}
+
