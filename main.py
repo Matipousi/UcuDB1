@@ -147,6 +147,7 @@ class AuthManager:
     
     def get_user_role(self, ci: str) -> Optional[Dict]:
         """Get user's role and program info"""
+        # First try to get full info with JOIN
         query = """
             SELECT rol, nombre_programa, id_facultad, tipo
             FROM participante_programa_academico ppa
@@ -155,7 +156,47 @@ class AuthManager:
             WHERE ci_participante = %s
             LIMIT 1
         """
-        return self.db.execute_fetchone(query, (ci,))
+        result = self.db.execute_fetchone(query, (ci,))
+        if result:
+            return result
+        
+        # If JOIN fails, try to get basic info without JOIN (fallback)
+        # This handles cases where there might be data integrity issues
+        query_fallback = """
+            SELECT rol, nombre_programa, id_facultad, 'grado' as tipo
+            FROM participante_programa_academico
+            WHERE ci_participante = %s
+            LIMIT 1
+        """
+        result_fallback = self.db.execute_fetchone(query_fallback, (ci,))
+        if result_fallback:
+            # Try to get the actual tipo from programa_academico if possible
+            tipo_query = """
+                SELECT tipo FROM programa_academico
+                WHERE nombre_programa = %s AND id_facultad = %s
+                LIMIT 1
+            """
+            tipo_result = self.db.execute_fetchone(
+                tipo_query, 
+                (result_fallback['nombre_programa'], result_fallback['id_facultad'])
+            )
+            if tipo_result:
+                result_fallback['tipo'] = tipo_result['tipo']
+            return result_fallback
+        
+        return None
+    
+    def user_has_program(self, ci: str) -> bool:
+        """Check if user has at least one academic program associated"""
+        query = """
+            SELECT COUNT(*) as cnt
+            FROM participante_programa_academico
+            WHERE ci_participante = %s
+        """
+        result = self.db.execute_fetchone(query, (ci,))
+        if result and result.get('cnt', 0) > 0:
+            return True
+        return False
 
 
 class ReservationManager:
@@ -182,7 +223,11 @@ class ReservationManager:
         auth = AuthManager(self.db)
         user_role = auth.get_user_role(ci)
         if not user_role:
-            return False, "User role not found"
+            # Check if user has programs at all
+            if auth.user_has_program(ci):
+                return False, "User role not found - data integrity issue: programs exist but cannot retrieve role information"
+            else:
+                return False, "User role not found - no academic program associated"
         
         tipo_sala = sala_info['tipo_sala']
         capacidad = sala_info['capacidad']

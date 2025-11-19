@@ -3,7 +3,7 @@ Database Service Layer
 Handles all database interactions and business logic
 """
 
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, time, timedelta
 from typing import Optional, List, Dict, Tuple
 from main import DatabaseManager, AuthManager, ReservationManager, ReportManager, DataInitializer
 
@@ -51,6 +51,94 @@ class DatabaseService:
         except Exception:
             # If column doesn't exist yet, return False
             return False
+    
+    def generate_access_token(self, ci: str, is_admin: bool) -> str:
+        """Generate a new access token for a user (valid for 1 week)"""
+        import secrets
+        import hashlib
+        from datetime import datetime, timedelta
+        
+        # Generate a secure random token
+        raw_token = secrets.token_urlsafe(32)
+        token_hash = hashlib.sha256(raw_token.encode('utf-8')).hexdigest()
+        
+        # Set expiration to 1 week from now
+        fecha_expiracion = datetime.now() + timedelta(days=7)
+        
+        # Store token in database
+        try:
+            self.db.execute_query(
+                """INSERT INTO access_token (token, ci_participante, is_admin, fecha_expiracion)
+                   VALUES (%s, %s, %s, %s)""",
+                (token_hash, ci, is_admin, fecha_expiracion)
+            )
+            return raw_token  # Return the raw token to send to client
+        except Exception as e:
+            # If token generation fails, return None
+            return None
+    
+    def validate_access_token(self, token: str) -> Optional[Dict]:
+        """Validate an access token and return user info if valid"""
+        import hashlib
+        
+        if not token:
+            return None
+        
+        # Hash the token to compare with stored hash
+        token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+        
+        # Check if token exists and is not expired
+        result = self.db.execute_fetchone(
+            """SELECT at.ci_participante, at.is_admin, p.nombre, p.apellido, p.email
+               FROM access_token at
+               JOIN participante p ON at.ci_participante = p.ci
+               WHERE at.token = %s 
+               AND at.fecha_expiracion > NOW()""",
+            (token_hash,)
+        )
+        
+        if result:
+            # Update last access time
+            self.db.execute_query(
+                "UPDATE access_token SET ultimo_acceso = NOW() WHERE token = %s",
+                (token_hash,)
+            )
+            return {
+                'ci': result['ci_participante'],
+                'nombre': result['nombre'],
+                'apellido': result['apellido'],
+                'email': result['email'],
+                'is_admin': bool(result['is_admin'])
+            }
+        
+        return None
+    
+    def revoke_access_token(self, token: str) -> bool:
+        """Revoke (delete) an access token"""
+        import hashlib
+        
+        if not token:
+            return False
+        
+        token_hash = hashlib.sha256(token.encode('utf-8')).hexdigest()
+        
+        try:
+            self.db.execute_query(
+                "DELETE FROM access_token WHERE token = %s",
+                (token_hash,)
+            )
+            return True
+        except Exception:
+            return False
+    
+    def cleanup_expired_tokens(self):
+        """Remove expired tokens from database"""
+        try:
+            self.db.execute_query(
+                "DELETE FROM access_token WHERE fecha_expiracion < NOW()"
+            )
+        except Exception:
+            pass
     
     # ==================== PARTICIPANTS ====================
     
@@ -264,24 +352,96 @@ class DatabaseService:
             fetch=True
         ) or []
     
-    def get_available_salas(self, fecha: date = None, id_turno: int = None):
-        """Get available rooms, optionally filtered by date and time slot"""
+    def get_salas_for_user(self, rol: str = None, tipo_programa: str = None):
+        """Get rooms filtered by user role and program type
+        
+        Args:
+            rol: User role ('alumno' or 'docente')
+            tipo_programa: Program type ('grado' or 'posgrado')
+        
+        Returns:
+            Filtered list of rooms based on access rules:
+            - Students (alumno): only 'libre' rooms
+            - Teachers (docente): 'libre' and 'docente' rooms
+            - Postgraduate (posgrado): 'libre' and 'posgrado' rooms
+        """
+        query = """
+            SELECT s.*, e.direccion, e.departamento 
+            FROM sala s 
+            JOIN edificio e ON s.edificio = e.nombre_edificio 
+            WHERE 1=1
+        """
+        params = []
+        
+        # Determine allowed room types based on user role and program type
+        allowed_types = ['libre']  # Everyone can access 'libre' rooms
+        
+        if rol == 'docente':
+            # Teachers can access 'libre' and 'docente' rooms
+            allowed_types.append('docente')
+        elif tipo_programa == 'posgrado':
+            # Postgraduate students can access 'libre' and 'posgrado' rooms
+            allowed_types.append('posgrado')
+        # Students (alumno) with grado programs only get 'libre' rooms (already in allowed_types)
+        
+        # Build WHERE clause for room types
+        placeholders = ','.join(['%s'] * len(allowed_types))
+        query += f" AND s.tipo_sala IN ({placeholders})"
+        params.extend(allowed_types)
+        
+        query += " ORDER BY s.edificio, s.nombre_sala"
+        return self.db.execute_query(query, tuple(params), fetch=True) or []
+    
+    def get_available_salas(self, fecha: date = None, hora_inicio: time = None, hora_fin: time = None, 
+                           rol: str = None, tipo_programa: str = None):
+        """Get available rooms, optionally filtered by date, time range, and user access
+        
+        Args:
+            fecha: Date to check availability
+            hora_inicio: Start time (inclusive)
+            hora_fin: End time (exclusive)
+            rol: User role ('alumno' or 'docente') for access filtering
+            tipo_programa: Program type ('grado' or 'posgrado') for access filtering
+        
+        Returns:
+            List of rooms that are available for ALL turnos in the specified time range
+            and accessible to the user based on their role and program type
+        """
         query = """
             SELECT s.*, e.direccion, e.departamento
             FROM sala s
             JOIN edificio e ON s.edificio = e.nombre_edificio
+            WHERE 1=1
         """
         params = []
         
-        if fecha and id_turno:
+        # Filter by user access (room type)
+        allowed_types = ['libre']  # Everyone can access 'libre' rooms
+        if rol == 'docente':
+            allowed_types.append('docente')
+        elif tipo_programa == 'posgrado':
+            allowed_types.append('posgrado')
+        
+        placeholders = ','.join(['%s'] * len(allowed_types))
+        query += f" AND s.tipo_sala IN ({placeholders})"
+        params.extend(allowed_types)
+        
+        # Filter by availability (date and time range)
+        if fecha and hora_inicio and hora_fin:
+            # Find all turnos that overlap with the time range
+            # A turno overlaps if: turno.hora_inicio < hora_fin AND turno.hora_fin > hora_inicio
             query += """
-                WHERE (s.nombre_sala, s.edificio) NOT IN (
-                    SELECT r.nombre_sala, r.edificio
+                AND (s.nombre_sala, s.edificio) NOT IN (
+                    SELECT DISTINCT r.nombre_sala, r.edificio
                     FROM reserva r
-                    WHERE r.fecha = %s AND r.id_turno = %s AND r.estado = 'activa'
+                    JOIN turno t ON r.id_turno = t.id_turno
+                    WHERE r.fecha = %s 
+                    AND r.estado = 'activa'
+                    AND t.hora_inicio < %s 
+                    AND t.hora_fin > %s
                 )
             """
-            params.extend([fecha, id_turno])
+            params.extend([fecha, hora_fin, hora_inicio])
         
         query += " ORDER BY s.edificio, s.nombre_sala"
         return self.db.execute_query(query, tuple(params), fetch=True) or []
@@ -414,6 +574,35 @@ class DatabaseService:
                 (estado, id_reserva)
             )
             return True, "Reservation updated successfully"
+        except Exception as e:
+            return False, str(e)
+    
+    def cancel_reserva(self, id_reserva: int, ci_participante: str):
+        """Cancel a reservation by a participant (user-facing)"""
+        try:
+            # Verify the user is a participant in this reservation
+            participante_check = self.db.execute_fetchone(
+                "SELECT id_reserva FROM reserva_participante WHERE id_reserva = %s AND ci_participante = %s",
+                (id_reserva, ci_participante)
+            )
+            
+            if not participante_check:
+                return False, "No tienes permiso para cancelar esta reserva o la reserva no existe"
+            
+            # Check if reservation is in 'activa' state (can only cancel active reservations)
+            reserva = self.get_reserva(id_reserva)
+            if not reserva:
+                return False, "Reserva no encontrada"
+            
+            if reserva['estado'] != 'activa':
+                return False, f"No se puede cancelar una reserva en estado '{reserva['estado']}'. Solo se pueden cancelar reservas activas."
+            
+            # Update reservation state to 'cancelada'
+            self.db.execute_query(
+                "UPDATE reserva SET estado = 'cancelada' WHERE id_reserva = %s",
+                (id_reserva,)
+            )
+            return True, "Reserva cancelada exitosamente"
         except Exception as e:
             return False, str(e)
     

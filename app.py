@@ -2,7 +2,7 @@
 UCU Study Room Reservation System - Flask Web Application
 """
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, make_response
 from functools import wraps
 import os
 from datetime import datetime, date, timedelta
@@ -114,22 +114,61 @@ def login_required(f):
 
 
 def admin_required(f):
-    """Decorator to require admin privileges"""
+    """Decorator to require admin privileges - validates token for security"""
     @wraps(f)
     @login_required
     def decorated_function(*args, **kwargs):
-        if not session.get('user', {}).get('is_admin', False):
+        # First check session (for backward compatibility)
+        user = session.get('user', {})
+        is_admin_session = user.get('is_admin', False)
+        
+        # CRITICAL: Also validate token from cookie to prevent URL manipulation
+        access_token = request.cookies.get('access_token')
+        is_admin_token = False
+        
+        if access_token:
+            token_user = db_service.validate_access_token(access_token)
+            if token_user:
+                is_admin_token = token_user.get('is_admin', False)
+                # Update session with token data (token is source of truth)
+                session['user'] = token_user
+            else:
+                # Token is invalid or expired
+                flash('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 'warning')
+                return redirect(url_for('login'))
+        
+        # Require BOTH session and token to have admin privileges
+        # This prevents users from modifying URLs to access admin routes
+        if not (is_admin_session and is_admin_token):
             flash('Acceso denegado. Se requieren privilegios de administrador.', 'error')
             return redirect(url_for('dashboard'))
+        
         return f(*args, **kwargs)
     return decorated_function
 
 
 @app.before_request
 def before_request():
-    """Initialize database before each request"""
+    """Initialize database before each request and check for access tokens"""
     if db is None or not db.connection or not db.connection.is_connected():
         init_db()
+    
+    # Cleanup expired tokens periodically (every 100 requests, approximate)
+    import random
+    if random.randint(1, 100) == 1:
+        db_service.cleanup_expired_tokens()
+    
+    # Check for access token in cookies
+    access_token = request.cookies.get('access_token')
+    if access_token:
+        # Validate token and set session if valid
+        token_user = db_service.validate_access_token(access_token)
+        if token_user:
+            # Token is valid, update session
+            session['user'] = token_user
+        elif 'user' in session:
+            # Token is invalid but session exists, clear session
+            session.pop('user', None)
 
 
 @app.route('/')
@@ -153,9 +192,28 @@ def login():
         
         user = db_service.login(email, password)
         if user:
-            session['user'] = user
-            flash(f'¡Bienvenido, {user["nombre"]} {user["apellido"]}!', 'success')
-            return redirect(url_for('dashboard'))
+            # Generate access token
+            is_admin = user.get('is_admin', False)
+            access_token = db_service.generate_access_token(user['ci'], is_admin)
+            
+            if access_token:
+                # Set session
+                session['user'] = user
+                
+                # Create response with token cookie (expires in 7 days)
+                response = make_response(redirect(url_for('dashboard')))
+                response.set_cookie(
+                    'access_token',
+                    access_token,
+                    max_age=7*24*60*60,  # 7 days in seconds
+                    httponly=True,  # Prevent JavaScript access (XSS protection)
+                    secure=False,  # Set to True in production with HTTPS
+                    samesite='Lax'  # CSRF protection
+                )
+                flash(f'¡Bienvenido, {user["nombre"]} {user["apellido"]}!', 'success')
+                return response
+            else:
+                flash('Error al generar token de acceso. Por favor, intenta nuevamente.', 'error')
         else:
             flash('Email o contraseña incorrectos.', 'error')
     
@@ -202,9 +260,19 @@ def register():
 @app.route('/logout')
 def logout():
     """User logout"""
+    # Revoke access token if present
+    access_token = request.cookies.get('access_token')
+    if access_token:
+        db_service.revoke_access_token(access_token)
+    
+    # Clear session
     session.pop('user', None)
+    
+    # Create response and clear cookie
+    response = make_response(redirect(url_for('login')))
+    response.set_cookie('access_token', '', expires=0)
     flash('Sesión cerrada exitosamente.', 'info')
-    return redirect(url_for('login'))
+    return response
 
 
 @app.route('/dashboard')
@@ -231,6 +299,8 @@ def dashboard():
         
         # Get user's reservations
         reservas = db_service.get_user_reservas(user['ci'])
+        # Filter to only active reservations for the count
+        reservas_activas = [r for r in reservas if r['estado'] == 'activa']
         # Get user's active sanctions
         sanciones = db_service.get_user_sanciones(user['ci'])
         # Get count of available rooms at current time
@@ -238,6 +308,7 @@ def dashboard():
         
         return render_template('user_dashboard.html',
                              reservas=reservas,
+                             reservas_activas_count=len(reservas_activas),
                              sanciones=sanciones,
                              has_program=user_role is not None,
                              is_admin=False,
@@ -292,11 +363,15 @@ def add_program():
 @login_required
 def view_rooms():
     """View available rooms - user-facing"""
+    from datetime import time
+    
     fecha_str = request.args.get('fecha', '')
-    id_turno = request.args.get('id_turno', '')
+    id_turno_inicio = request.args.get('id_turno_inicio', '')
+    id_turno_fin = request.args.get('id_turno_fin', '')
     
     fecha = None
-    turno_id = None
+    hora_inicio = None
+    hora_fin = None
     
     if fecha_str:
         try:
@@ -304,17 +379,42 @@ def view_rooms():
         except ValueError:
             flash('Fecha inválida.', 'error')
     
-    if id_turno:
-        try:
-            turno_id = int(id_turno)
-        except ValueError:
-            pass
-    
-    # Get available rooms (filtered if date and turno provided)
-    salas = db_service.get_available_salas(fecha, turno_id)
+    # Get all turnos to find the selected ones
     turnos = db_service.get_turnos()
+    turnos_dict = {t['id_turno']: t for t in turnos}
     
-    return render_template('user/rooms.html', salas=salas, turnos=turnos, fecha=fecha_str, id_turno=id_turno)
+    if id_turno_inicio:
+        try:
+            turno_id = int(id_turno_inicio)
+            if turno_id in turnos_dict:
+                hora_inicio = turnos_dict[turno_id]['hora_inicio']
+        except (ValueError, KeyError):
+            flash('Turno de inicio inválido.', 'error')
+    
+    if id_turno_fin:
+        try:
+            turno_id = int(id_turno_fin)
+            if turno_id in turnos_dict:
+                hora_fin = turnos_dict[turno_id]['hora_fin']
+        except (ValueError, KeyError):
+            flash('Turno de fin inválido.', 'error')
+    
+    # Validate time range
+    if hora_inicio and hora_fin and hora_fin <= hora_inicio:
+        flash('La hora de fin debe ser posterior a la hora de inicio.', 'error')
+        hora_inicio = None
+        hora_fin = None
+    
+    # Get user role for filtering rooms by access
+    user_role = db_service.get_user_role(session['user']['ci'])
+    rol = user_role.get('rol', 'alumno') if user_role else 'alumno'
+    tipo_programa = user_role.get('tipo', 'grado') if user_role else 'grado'
+    
+    # Get available rooms (filtered by date, time range, and user access)
+    salas = db_service.get_available_salas(fecha, hora_inicio, hora_fin, rol, tipo_programa)
+    
+    return render_template('user/rooms.html', salas=salas, turnos=turnos, 
+                         fecha=fecha_str, id_turno_inicio=id_turno_inicio, id_turno_fin=id_turno_fin)
 
 
 @app.route('/my-sanctions')
@@ -334,6 +434,18 @@ def my_reservations():
     return render_template('user/reservations.html', reservas=reservas)
 
 
+@app.route('/my-reservations/<int:id_reserva>/cancel', methods=['POST'])
+@login_required
+def cancel_my_reserva(id_reserva):
+    """Cancel user's own reservation"""
+    success, message = db_service.cancel_reserva(id_reserva, session['user']['ci'])
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'error')
+    return redirect(url_for('my_reservations'))
+
+
 @app.route('/make-appointment', methods=['GET', 'POST'])
 @login_required
 def make_appointment():
@@ -343,6 +455,11 @@ def make_appointment():
     if not user_role:
         flash('No tienes un programa académico asociado. Por favor, agrega tu programa académico antes de hacer reservas.', 'error')
         return redirect(url_for('add_program'))
+    
+    # Get filtered rooms based on user role and program type
+    rol = user_role.get('rol', 'alumno')
+    tipo_programa = user_role.get('tipo', 'grado')
+    salas = db_service.get_salas_for_user(rol, tipo_programa)
     
     if request.method == 'POST':
         nombre_sala = request.form.get('nombre_sala', '').strip()
@@ -354,7 +471,7 @@ def make_appointment():
         if not all([nombre_sala, edificio, fecha_str, id_turno]):
             flash('Por favor, completa todos los campos obligatorios.', 'error')
             return render_template('user/make_appointment.html', 
-                                 salas=db_service.get_all_salas(), 
+                                 salas=salas, 
                                  turnos=db_service.get_turnos())
         
         try:
@@ -384,7 +501,7 @@ def make_appointment():
             flash(f'Error en los datos ingresados: {str(e)}', 'error')
     
     return render_template('user/make_appointment.html', 
-                         salas=db_service.get_all_salas(), 
+                         salas=salas, 
                          turnos=db_service.get_turnos())
 
 
@@ -1001,7 +1118,7 @@ def admin_reporte_reservas_por_mes():
         GROUP BY DATE_FORMAT(fecha, '%Y-%m')
         ORDER BY mes DESC
     """
-    results = db.execute_query(query, fetch=True) or []
+    results = db_service.db.execute_query(query, fetch=True) or []
     return render_template('reportes/reservas_por_mes.html', results=results)
 
 

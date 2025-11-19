@@ -13,26 +13,43 @@
     </div>
     <div class="card-body">
         <form method="GET" class="row g-3">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label for="fecha" class="form-label">Fecha</label>
                 <input type="date" class="form-control" id="fecha" name="fecha" value="{{ fecha }}">
             </div>
-            <div class="col-md-4">
-                <label for="id_turno" class="form-label">Turno</label>
-                <select class="form-select" id="id_turno" name="id_turno">
-                    <option value="">Todos los turnos</option>
+            <div class="col-md-3">
+                <label for="id_turno_inicio" class="form-label">Hora de Inicio</label>
+                <select class="form-select" id="id_turno_inicio" name="id_turno_inicio">
+                    <option value="">Seleccionar turno</option>
                     {% for turno in turnos %}
-                    <option value="{{ turno.id_turno }}" {% if id_turno == turno.id_turno|string %}selected{% endif %}>
+                    <option value="{{ turno.id_turno }}" {% if id_turno_inicio == turno.id_turno|string %}selected{% endif %}>
                         {{ turno.hora_inicio }} - {{ turno.hora_fin }}
                     </option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-4 d-flex align-items-end">
+            <div class="col-md-3">
+                <label for="id_turno_fin" class="form-label">Hora de Fin</label>
+                <select class="form-select" id="id_turno_fin" name="id_turno_fin">
+                    <option value="">Seleccionar turno</option>
+                    {% for turno in turnos %}
+                    <option value="{{ turno.id_turno }}" {% if id_turno_fin == turno.id_turno|string %}selected{% endif %}>
+                        {{ turno.hora_inicio }} - {{ turno.hora_fin }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">Filtrar</button>
                 <a href="{{ url_for('view_rooms') }}" class="btn btn-secondary">Limpiar</a>
             </div>
         </form>
+        <div class="mt-2">
+            <small class="text-muted">
+                <i class="bi bi-info-circle"></i> 
+                Selecciona una fecha y un rango de horas para ver las salas disponibles en ese período.
+            </small>
+        </div>
     </div>
 </div>
 
@@ -91,6 +108,55 @@
 const fechaInput = document.getElementById('fecha');
 if (fechaInput) {
     fechaInput.min = new Date().toISOString().split('T')[0];
+}
+
+// Validate time range - ensure fin turno is after inicio turno
+const turnoInicioSelect = document.getElementById('id_turno_inicio');
+const turnoFinSelect = document.getElementById('id_turno_fin');
+const form = document.querySelector('form');
+
+if (form && turnoInicioSelect && turnoFinSelect) {
+    // Store turno data for validation - map turno IDs to their start times
+    const turnosInicioTimes = {};
+    {% for turno in turnos %}
+    turnosInicioTimes[{{ turno.id_turno }}] = '{{ turno.hora_inicio }}';
+    {% endfor %}
+    
+    // Store turno data for validation - map turno IDs to their end times
+    const turnosFinTimes = {};
+    {% for turno in turnos %}
+    turnosFinTimes[{{ turno.id_turno }}] = '{{ turno.hora_fin }}';
+    {% endfor %}
+    
+    form.addEventListener('submit', function(e) {
+        const turnoInicioId = turnoInicioSelect.value;
+        const turnoFinId = turnoFinSelect.value;
+        
+        if (turnoInicioId && turnoFinId) {
+            // Get the start time of the inicio turno and end time of the fin turno
+            const inicioTime = turnosInicioTimes[turnoInicioId];
+            const finTime = turnosFinTimes[turnoFinId];
+            
+            if (inicioTime && finTime) {
+                // Compare times - convert to comparable format
+                // Times are in HH:MM:SS format, convert to seconds for comparison
+                function timeToSeconds(timeStr) {
+                    const parts = timeStr.split(':');
+                    return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + (parseInt(parts[2]) || 0);
+                }
+                
+                const inicioSeconds = timeToSeconds(inicioTime);
+                const finSeconds = timeToSeconds(finTime);
+                
+                if (finSeconds <= inicioSeconds) {
+                    e.preventDefault();
+                    alert('La hora de fin debe ser posterior a la hora de inicio.');
+                    turnoFinSelect.focus();
+                    return false;
+                }
+            }
+        }
+    });
 }
 </script>
 {% endblock %}

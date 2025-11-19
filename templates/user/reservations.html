@@ -24,6 +24,7 @@
                         <th>Horario</th>
                         <th>Participantes</th>
                         <th>Estado</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -44,6 +45,17 @@
                                 <span class="badge bg-warning">Sin Asistencia</span>
                             {% elif r.estado == 'finalizada' %}
                                 <span class="badge bg-info">Finalizada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.estado == 'activa' %}
+                            <form method="POST" action="{{ url_for('cancel_my_reserva', id_reserva=r.id_reserva) }}" style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de que deseas cancelar esta reserva?');">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-muted">-</span>
                             {% endif %}
                         </td>
                     </tr>
