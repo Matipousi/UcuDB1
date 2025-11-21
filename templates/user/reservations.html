@@ -17,7 +17,9 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
+                        {% if is_admin %}
                         <th>ID</th>
+                        {% endif %}
                         <th>Sala</th>
                         <th>Edificio</th>
                         <th>Fecha</th>
@@ -30,7 +32,9 @@
                 <tbody>
                     {% for r in reservas %}
                     <tr>
+                        {% if is_admin %}
                         <td>{{ r.id_reserva }}</td>
+                        {% endif %}
                         <td><strong>{{ r.nombre_sala }}</strong></td>
                         <td>{{ r.edificio }}</td>
                         <td>{{ r.fecha }}</td>

@@ -5,7 +5,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-exclamation-triangle"></i> Sanciones</h2>
-    <a href="{{ url_for('create_sancion') }}" class="btn btn-primary">
+    <a href="{{ url_for('admin_create_sancion') }}" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Crear Sanción
     </a>
 </div>
@@ -43,10 +43,10 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{{ url_for('edit_sancion', id_sancion=s.id_sancion) }}" class="btn btn-sm btn-outline-primary">
+                            <a href="{{ url_for('admin_edit_sancion', id_sancion=s.id_sancion) }}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-pencil"></i> Editar
                             </a>
-                            <form method="POST" action="{{ url_for('delete_sancion', id_sancion=s.id_sancion) }}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar esta sanción?');">
+                            <form method="POST" action="{{ url_for('admin_delete_sancion', id_sancion=s.id_sancion) }}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar esta sanción?');">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">
                                     <i class="bi bi-trash"></i> Eliminar
                                 </button>

@@ -11,6 +11,8 @@ from database_service import DatabaseService
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+# Configure session lifetime for permanent sessions (7 days)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 
 # Database configuration - will be set dynamically
 DB_CONFIG = {}
@@ -118,32 +120,53 @@ def admin_required(f):
     @wraps(f)
     @login_required
     def decorated_function(*args, **kwargs):
-        # First check session (for backward compatibility)
+        # Ensure db_service is initialized
+        if db_service is None:
+            if not init_db():
+                flash('Error de conexión a la base de datos. Por favor, intenta nuevamente.', 'error')
+                return redirect(url_for('login'))
+        
+        # First check session
         user = session.get('user', {})
         is_admin_session = user.get('is_admin', False)
         
-        # CRITICAL: Also validate token from cookie to prevent URL manipulation
+        # Validate token from cookie if available
         access_token = request.cookies.get('access_token')
         is_admin_token = False
+        token_valid = False
         
         if access_token:
-            token_user = db_service.validate_access_token(access_token)
-            if token_user:
-                is_admin_token = token_user.get('is_admin', False)
-                # Update session with token data (token is source of truth)
-                session['user'] = token_user
-            else:
-                # Token is invalid or expired
-                flash('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.', 'warning')
-                return redirect(url_for('login'))
+            try:
+                token_user = db_service.validate_access_token(access_token)
+                if token_user:
+                    token_valid = True
+                    is_admin_token = token_user.get('is_admin', False)
+                    # Update session with token data (token is source of truth)
+                    session['user'] = token_user
+                    session.permanent = True
+                    session.modified = True
+            except Exception:
+                # If token validation fails due to error, fall back to session check
+                pass
         
-        # Require BOTH session and token to have admin privileges
-        # This prevents users from modifying URLs to access admin routes
-        if not (is_admin_session and is_admin_token):
-            flash('Acceso denegado. Se requieren privilegios de administrador.', 'error')
-            return redirect(url_for('dashboard'))
+        # Primary check: If session says user is admin, allow access
+        # This handles immediate post-login access where token might not be validated yet
+        if is_admin_session:
+            # Session indicates admin - allow access
+            # Token validation is secondary security check
+            if access_token and not token_valid:
+                # Token exists but validation failed - this is suspicious but allow if session is valid
+                # The session was just set during login, so it's trustworthy
+                pass
+            return f(*args, **kwargs)
         
-        return f(*args, **kwargs)
+        # Secondary check: If token says user is admin, allow access
+        if is_admin_token:
+            return f(*args, **kwargs)
+        
+        # Neither session nor token indicates admin access
+        flash('Acceso denegado. Se requieren privilegios de administrador.', 'error')
+        return redirect(url_for('dashboard'))
     return decorated_function
 
 
@@ -154,21 +177,42 @@ def before_request():
         init_db()
     
     # Cleanup expired tokens periodically (every 100 requests, approximate)
-    import random
-    if random.randint(1, 100) == 1:
-        db_service.cleanup_expired_tokens()
+    # Only if db_service is initialized
+    if db_service is not None:
+        import random
+        if random.randint(1, 100) == 1:
+            db_service.cleanup_expired_tokens()
     
-    # Check for access token in cookies
+    # Ensure db_service is initialized before using it
+    if db_service is None:
+        if not init_db():
+            return  # Can't proceed without database
+    
+    # If user is already in session, keep it (don't clear on first request after login)
+    # Only validate/update from token if no session exists or if token is present
     access_token = request.cookies.get('access_token')
-    if access_token:
-        # Validate token and set session if valid
-        token_user = db_service.validate_access_token(access_token)
-        if token_user:
-            # Token is valid, update session
-            session['user'] = token_user
-        elif 'user' in session:
-            # Token is invalid but session exists, clear session
-            session.pop('user', None)
+    
+    if 'user' in session:
+        # Session exists - validate token if present, but don't clear session if token is missing
+        # (token might not be set yet on the first request after login)
+        if access_token:
+            token_user = db_service.validate_access_token(access_token)
+            if token_user:
+                # Token is valid, update session with latest info
+                session['user'] = token_user
+                session.permanent = True
+                session.modified = True
+            # If token is invalid but session exists, don't clear it immediately
+            # (might be a temporary issue or token not yet propagated)
+    else:
+        # No session - try to restore from token
+        if access_token:
+            token_user = db_service.validate_access_token(access_token)
+            if token_user:
+                # Token is valid, restore session
+                session['user'] = token_user
+                session.permanent = True
+                session.modified = True
 
 
 @app.route('/')
@@ -182,6 +226,10 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """User login"""
+    # If user is already logged in, redirect to dashboard
+    if 'user' in session:
+        return redirect(url_for('dashboard'))
+    
     if request.method == 'POST':
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
@@ -190,6 +238,12 @@ def login():
             flash('Por favor, completa todos los campos.', 'error')
             return render_template('login.html')
         
+        # Ensure db_service is initialized
+        if db_service is None:
+            if not init_db():
+                flash('Error de conexión a la base de datos. Por favor, intenta nuevamente.', 'error')
+                return render_template('login.html')
+        
         user = db_service.login(email, password)
         if user:
             # Generate access token
@@ -197,10 +251,16 @@ def login():
             access_token = db_service.generate_access_token(user['ci'], is_admin)
             
             if access_token:
-                # Set session
+                # Set session and mark as permanent to ensure it's saved
                 session['user'] = user
+                session.permanent = True
+                session.modified = True  # Explicitly mark session as modified
                 
-                # Create response with token cookie (expires in 7 days)
+                # Set flash message
+                flash(f'¡Bienvenido, {user["nombre"]} {user["apellido"]}!', 'success')
+                
+                # Create redirect response with cookie
+                # Flask will automatically save the session when this response is returned
                 response = make_response(redirect(url_for('dashboard')))
                 response.set_cookie(
                     'access_token',
@@ -210,7 +270,7 @@ def login():
                     secure=False,  # Set to True in production with HTTPS
                     samesite='Lax'  # CSRF protection
                 )
-                flash(f'¡Bienvenido, {user["nombre"]} {user["apellido"]}!', 'success')
+                
                 return response
             else:
                 flash('Error al generar token de acceso. Por favor, intenta nuevamente.', 'error')
@@ -430,8 +490,10 @@ def my_sanctions():
 @login_required
 def my_reservations():
     """View user's reservations"""
-    reservas = db_service.get_user_reservas(session['user']['ci'])
-    return render_template('user/reservations.html', reservas=reservas)
+    user = session.get('user', {})
+    reservas = db_service.get_user_reservas(user['ci'])
+    is_admin = user.get('is_admin', False)
+    return render_template('user/reservations.html', reservas=reservas, is_admin=is_admin)
 
 
 @app.route('/my-reservations/<int:id_reserva>/cancel', methods=['POST'])

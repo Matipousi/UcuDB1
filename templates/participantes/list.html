@@ -5,7 +5,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-people"></i> Participantes</h2>
-    <a href="{{ url_for('create_participante') }}" class="btn btn-primary">
+    <a href="{{ url_for('admin_create_participante') }}" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Crear Participante
     </a>
 </div>
@@ -33,10 +33,10 @@
                         <td>{{ p.email }}</td>
                         <td>{{ p.programas or 'Sin programa' }}</td>
                         <td>
-                            <a href="{{ url_for('edit_participante', ci=p.ci) }}" class="btn btn-sm btn-outline-primary">
+                            <a href="{{ url_for('admin_edit_participante', ci=p.ci) }}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-pencil"></i> Editar
                             </a>
-                            <form method="POST" action="{{ url_for('delete_participante', ci=p.ci) }}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar este participante?');">
+                            <form method="POST" action="{{ url_for('admin_delete_participante', ci=p.ci) }}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar este participante?');">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">
                                     <i class="bi bi-trash"></i> Eliminar
                                 </button>

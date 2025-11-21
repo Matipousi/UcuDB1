@@ -13,12 +13,21 @@
                 <form method="POST">
                     <div class="mb-3">
                         <label for="ci_participante" class="form-label">Participante *</label>
-                        <select class="form-select" id="ci_participante" name="ci_participante" required>
-                            <option value="">Seleccionar participante...</option>
-                            {% for p in participantes %}
-                            <option value="{{ p.ci }}">{{ p.nombre }} {{ p.apellido }} ({{ p.ci }}) - {{ p.email }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="position-relative">
+                            <input type="text" class="form-control" id="search_participante" placeholder="Buscar por nombre, apellido, CI o email..." autocomplete="off">
+                            <select class="form-select" id="ci_participante" name="ci_participante" required style="display: none;">
+                                <option value="">Seleccionar participante...</option>
+                                {% for p in participantes %}
+                                <option value="{{ p.ci }}" data-search="{{ (p.nombre + ' ' + p.apellido + ' ' + p.ci + ' ' + p.email)|lower }}">
+                                    {{ p.nombre }} {{ p.apellido }} ({{ p.ci }}) - {{ p.email }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div id="filtered_options" class="list-group position-absolute w-100" style="max-height: 300px; overflow-y: auto; z-index: 1000; display: none; border: 1px solid #dee2e6; border-radius: 0.375rem; margin-top: 2px; box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);">
+                                <!-- Filtered options will appear here -->
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">Escribe para buscar y seleccionar un participante</small>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -35,12 +44,109 @@
                     </div>
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">Crear Sanción</button>
-                        <a href="{{ url_for('list_sanciones') }}" class="btn btn-secondary">Cancelar</a>
+                        <a href="{{ url_for('admin_list_sanciones') }}" class="btn btn-secondary">Cancelar</a>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    const searchInput = document.getElementById('search_participante');
+    const selectElement = document.getElementById('ci_participante');
+    const filteredOptions = document.getElementById('filtered_options');
+    const allOptions = Array.from(selectElement.options).slice(1); // Skip first empty option
+    
+    // Filter options based on search
+    function filterOptions(searchTerm) {
+        const term = searchTerm.toLowerCase().trim();
+        filteredOptions.innerHTML = '';
+        
+        if (term === '') {
+            filteredOptions.style.display = 'none';
+            return;
+        }
+        
+        const filtered = allOptions.filter(option => {
+            const searchText = option.getAttribute('data-search') || option.text.toLowerCase();
+            return searchText.includes(term);
+        });
+        
+        if (filtered.length === 0) {
+            filteredOptions.innerHTML = '<div class="list-group-item text-muted">No se encontraron participantes</div>';
+        } else {
+            filtered.forEach(option => {
+                const item = document.createElement('a');
+                item.href = '#';
+                item.className = 'list-group-item list-group-item-action';
+                item.textContent = option.text;
+                item.onclick = function(e) {
+                    e.preventDefault();
+                    selectElement.value = option.value;
+                    searchInput.value = option.text; // Show selected participant in search box
+                    filteredOptions.style.display = 'none';
+                };
+                filteredOptions.appendChild(item);
+            });
+        }
+        
+        filteredOptions.style.display = 'block';
+    }
+    
+    // Search input event
+    searchInput.addEventListener('input', function(e) {
+        // Only filter if user is typing (not when we set the value programmatically)
+        if (selectElement.value === '' || !selectElement.options[selectElement.selectedIndex] || 
+            searchInput.value !== selectElement.options[selectElement.selectedIndex].text) {
+            selectElement.value = ''; // Clear selection when user types
+            filterOptions(e.target.value);
+        }
+    });
+    
+    // Clear selection when user starts typing
+    searchInput.addEventListener('focus', function() {
+        if (selectElement.value) {
+            // Keep the value but allow filtering
+            filterOptions(searchInput.value);
+        }
+    });
+    
+    // Hide dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.position-relative')) {
+            filteredOptions.style.display = 'none';
+        }
+    });
+    
+    // Handle keyboard navigation
+    searchInput.addEventListener('keydown', function(e) {
+        const visibleItems = filteredOptions.querySelectorAll('.list-group-item-action');
+        if (visibleItems.length === 0) return;
+        
+        let currentIndex = Array.from(visibleItems).findIndex(item => item.classList.contains('active'));
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (currentIndex < visibleItems.length - 1) {
+                if (currentIndex >= 0) visibleItems[currentIndex].classList.remove('active');
+                visibleItems[currentIndex + 1].classList.add('active');
+                visibleItems[currentIndex + 1].scrollIntoView({ block: 'nearest' });
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (currentIndex > 0) {
+                visibleItems[currentIndex].classList.remove('active');
+                visibleItems[currentIndex - 1].classList.add('active');
+                visibleItems[currentIndex - 1].scrollIntoView({ block: 'nearest' });
+            }
+        } else if (e.key === 'Enter' && currentIndex >= 0) {
+            e.preventDefault();
+            visibleItems[currentIndex].click();
+        }
+    });
+})();
+</script>
 {% endblock %}
 

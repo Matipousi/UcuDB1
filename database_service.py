@@ -539,7 +539,7 @@ class DatabaseService:
         ) or []
     
     def get_user_reservas(self, ci: str):
-        """Get reservations for a specific user"""
+        """Get reservations for a specific user, ordered by date (newest first)"""
         return self.db.execute_query(
             """SELECT r.*, s.capacidad, s.tipo_sala, t.hora_inicio, t.hora_fin,
                COUNT(rp.ci_participante) as num_participantes

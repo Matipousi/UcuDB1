@@ -5,9 +5,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-calendar-check"></i> Reservas</h2>
-    <a href="{{ url_for('create_reserva') }}" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Crear Reserva
-    </a>
+    <!-- Note: Reservas are created by users, not admins directly -->
 </div>
 
 <div class="card">
@@ -47,13 +45,13 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{{ url_for('edit_reserva', id_reserva=r.id_reserva) }}" class="btn btn-sm btn-outline-primary">
+                            <a href="{{ url_for('admin_edit_reserva', id_reserva=r.id_reserva) }}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-pencil"></i> Editar
                             </a>
-                            <a href="{{ url_for('update_attendance', id_reserva=r.id_reserva) }}" class="btn btn-sm btn-outline-info">
+                            <a href="{{ url_for('admin_update_attendance', id_reserva=r.id_reserva) }}" class="btn btn-sm btn-outline-info">
                                 <i class="bi bi-check-circle"></i> Asistencia
                             </a>
-                            <form method="POST" action="{{ url_for('delete_reserva', id_reserva=r.id_reserva) }}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar esta reserva?');">
+                            <form method="POST" action="{{ url_for('admin_delete_reserva', id_reserva=r.id_reserva) }}" style="display: inline;" onsubmit="return confirm('¿Estás seguro de eliminar esta reserva?');">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">
                                     <i class="bi bi-trash"></i> Eliminar
                                 </button>
