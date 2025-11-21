@@ -42,7 +42,7 @@ def get_db_config():
     builtin_config = {
         'host': '100.100.101.1',
         'user': 'root',
-        'password': '220505',
+        'password': 'rootpassword',
         'database': 'UCU_SalasDeEstudio'
     }
     
