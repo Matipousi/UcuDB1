@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # Servicio de Base de Datos MySQL
+  db:
+    image: mysql:8.0
+    container_name: ucu_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: UCU_SalasDeEstudio
+      MYSQL_USER: ucu_user
+      MYSQL_PASSWORD: ucu_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./add_admin_support.sql:/docker-entrypoint-initdb.d/02-admin-support.sql:ro
+      - ./add_token_support.sql:/docker-entrypoint-initdb.d/03-token-support.sql:ro
+      - ./security_enhancements.sql:/docker-entrypoint-initdb.d/04-security.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ucu_network
+
+  # Servicio de Aplicación Web Flask
+  web:
+    build: .
+    container_name: ucu_web
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=rootpassword
+      - DB_NAME=UCU_SalasDeEstudio
+      - SECRET_KEY=change-this-secret-key-in-production
+      - FLASK_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - ./logs:/app/logs
+    networks:
+      - ucu_network
+    # Comando para esperar a que la BD esté lista
+    command: >
+      sh -c "
+        echo 'Waiting for database to be ready...' &&
+        while ! mysqladmin ping -h db -u root -prootpassword --silent; do
+          sleep 2
+        done &&
+        echo 'Database is ready!' &&
+        python app.py
+      "
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  ucu_network:
+    driver: bridge
+

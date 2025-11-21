@@ -229,6 +229,57 @@ El sistema implementa las siguientes reglas:
 - La aplicación web (`app.py`) reutiliza toda la lógica de negocio de `main.py`
 - Todos los reportes están disponibles desde el menú de navegación
 
+## Dockerización
+
+El proyecto incluye soporte completo para Docker y Docker Compose para facilitar el despliegue.
+
+### Requisitos
+- Docker
+- Docker Compose
+
+### Ejecutar con Docker Compose
+
+1. **Construir y levantar los servicios:**
+```bash
+docker-compose up -d
+```
+
+2. **Ver logs:**
+```bash
+docker-compose logs -f
+```
+
+3. **Detener servicios:**
+```bash
+docker-compose down
+```
+
+4. **Detener y eliminar volúmenes (incluyendo datos de BD):**
+```bash
+docker-compose down -v
+```
+
+### Estructura Docker
+
+- **Dockerfile**: Imagen de la aplicación Flask
+- **docker-compose.yml**: Orquestación de servicios (app + MySQL)
+- **.dockerignore**: Archivos excluidos de la imagen
+
+Los scripts SQL se ejecutan automáticamente al inicializar el contenedor de MySQL.
+
+### Variables de Entorno en Docker
+
+Las variables de entorno se configuran en `docker-compose.yml`. Para producción, modifica:
+- `MYSQL_ROOT_PASSWORD`
+- `SECRET_KEY`
+- Credenciales de base de datos
+
 ## Soporte
 
 Para problemas o consultas, revisa los logs de la aplicación o contacta al equipo de desarrollo.
+
+## Repositorio
+
+Este proyecto está disponible en GitHub: https://github.com/Matipousi/UcuDB1
+
+**Nota:** Asegúrate de que el repositorio esté configurado como público si es un requisito del proyecto.

@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS `participante` (
   `nombre` VARCHAR(50) NOT NULL,
   `apellido` VARCHAR(50) NOT NULL,
   `email` VARCHAR(100) NOT NULL UNIQUE,
+  `is_admin` BOOLEAN DEFAULT FALSE NOT NULL, -- Indica si el participante tiene privilegios de administrador
   PRIMARY KEY (`ci`)
 ) ENGINE = InnoDB;
 
@@ -187,8 +188,13 @@ CREATE TABLE IF NOT EXISTS `access_token` (
   INDEX `idx_participante` (`ci_participante`) -- Índice para búsquedas por participante
 ) ENGINE = InnoDB;
 
-
-
+-- -----------------------------------------------------
+-- Configuración inicial de administradores
+-- Establece el usuario con email "matipousi22@gmail.com" como administrador
+-- -----------------------------------------------------
+UPDATE `participante` 
+SET `is_admin` = TRUE 
+WHERE `email` = 'matipousi22@gmail.com';
 
 
 
