@@ -24,6 +24,20 @@ db_service = None
 
 def get_db_config():
     """Prompt user for database configuration"""
+    # Check for environment variables first (Docker mode)
+    if os.environ.get('DB_HOST'):
+        config = {
+            'host': os.environ.get('DB_HOST', 'db'),
+            'user': os.environ.get('DB_USER', 'root'),
+            'password': os.environ.get('DB_PASSWORD', 'rootpassword'),
+            'database': os.environ.get('DB_NAME', 'UCU_SalasDeEstudio')
+        }
+        print("\n" + "="*60)
+        print("Database Configuration")
+        print("="*60)
+        print("\nUsing environment variables for database connection...")
+        return config
+    
     # Built-in default credentials
     builtin_config = {
         'host': '100.100.101.1',

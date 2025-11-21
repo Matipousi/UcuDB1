@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Servicio de Base de Datos MySQL
   db:
@@ -12,7 +10,7 @@ services:
       MYSQL_USER: ucu_user
       MYSQL_PASSWORD: ucu_password
     ports:
-      - "3306:3306"
+      - "3307:3306"  # Mapeado a 3307 para evitar conflicto con MySQL local
     volumes:
       - mysql_data:/var/lib/mysql
       - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
@@ -33,7 +31,7 @@ services:
     container_name: ucu_web
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "5001:5000"  # Mapeado a 5001 para evitar conflicto con aplicación local
     environment:
       - DB_HOST=db
       - DB_USER=root
@@ -49,16 +47,8 @@ services:
       - ./logs:/app/logs
     networks:
       - ucu_network
-    # Comando para esperar a que la BD esté lista
-    command: >
-      sh -c "
-        echo 'Waiting for database to be ready...' &&
-        while ! mysqladmin ping -h db -u root -prootpassword --silent; do
-          sleep 2
-        done &&
-        echo 'Database is ready!' &&
-        python app.py
-      "
+    # Comando simple - la aplicación manejará la conexión
+    command: python app.py
 
 volumes:
   mysql_data:

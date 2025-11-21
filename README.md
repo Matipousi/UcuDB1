@@ -81,19 +81,48 @@ DB_CONFIG = {
 
 ### 5. Ejecutar la Aplicación Web
 
-**Usando el Python del entorno virtual:**
+**Opción A: Usando scripts de ejecución (Recomendado)**
+
+**En Linux/macOS:**
+```bash
+chmod +x run_web.sh
+./run_web.sh
+```
+
+**En Windows:**
+```batch
+run_web.bat
+```
+
+**Opción B: Usando el Python del entorno virtual directamente**
+
+**En Linux/macOS:**
 ```bash
 ./venv/bin/python app.py
 ```
 
-**O activando el entorno virtual primero:**
+**En Windows:**
+```batch
+venv\Scripts\python.exe app.py
+```
+
+**Opción C: Activando el entorno virtual primero**
+
+**En Linux/macOS (bash/zsh):**
 ```bash
-# Para bash/zsh:
 source venv/bin/activate
 python app.py
+```
 
-# Para fish shell:
+**En Linux/macOS (fish shell):**
+```bash
 source venv/bin/activate.fish
+python app.py
+```
+
+**En Windows:**
+```batch
+venv\Scripts\activate.bat
 python app.py
 ```
 
