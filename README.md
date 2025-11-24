@@ -1,39 +1,39 @@
-# UCU Study Room Reservation System
+# Sistema de Reservas de Salas de Estudio UCU
 
-A simple web application for managing study room reservations at UCU.
+Aplicación web para la gestión de reservas de salas de estudio en la UCU.
 
-## Quick Start
+## Inicio Rápido
 
-### Option 1: Using Docker (Easiest)
+### Opción 1: Usando Docker
 
-If you have Docker installed, this is the simplest way to run everything:
+Si tienes Docker instalado, esta es la forma más simple de ejecutar todo:
 
 ```bash
 docker-compose up -d
 ```
 
-That's it! The app will be available at `http://localhost:5001` and the database will be set up automatically.
+La aplicación estará disponible en `http://localhost:5001` y la base de datos se configurará automáticamente.
 
-To stop it:
+Para detenerla:
 ```bash
 docker-compose down
 ```
 
-To stop and delete all data:
+Para detener y eliminar todos los datos:
 ```bash
 docker-compose down -v
 ```
 
-### Option 2: Running Locally
+### Opción 2: Ejecución Local
 
-#### Setup
+#### Configuración
 
-1. **Create a virtual environment:**
+1. **Crear un entorno virtual:**
    ```bash
    python -m venv venv
    ```
 
-2. **Install dependencies:**
+2. **Instalar dependencias:**
    ```bash
    # Linux/Mac
    ./venv/bin/pip install -r requirements.txt
@@ -42,39 +42,39 @@ docker-compose down -v
    venv\Scripts\pip install -r requirements.txt
    ```
 
-3. **Set up the database:**
-   - Make sure MySQL is running
-   - Create the database: `mysql -u root -p < schema.sql`
-   - Or configure the connection in `app.py` if needed
+3. **Configurar la base de datos:**
+   - Asegúrate de que MySQL esté ejecutándose
+   - Crea la base de datos: `mysql -u root -p < schema.sql`
+   - O configura la conexión en `app.py` si es necesario
 
-#### Running the Application
+#### Ejecutar la Aplicación
 
-**Web version** (opens in browser at `http://localhost:5000`):
+**Versión web** (se abre en el navegador en `http://localhost:5000`):
 
 - **Linux/Mac:** `./run_web.sh`
 - **Windows:** `run_web.bat`
 
-**Console version** (command-line interface):
+**Versión consola** (interfaz de línea de comandos):
 
 - **Linux/Mac:** `./run_console.sh`
 - **Windows:** `run_console.bat`
 
-That's it! The scripts handle everything for you.
+Los scripts manejan todo automáticamente.
 
-## What This Does
+## Funcionalidades
 
-- Users can register and log in
-- Create and manage room reservations
-- Track attendance
-- View reports and statistics
-- Manage participants, rooms, and sanctions
+- Registro e inicio de sesión de usuarios
+- Crear y gestionar reservas de salas
+- Control de asistencia
+- Ver reportes y estadísticas
+- Gestionar participantes, salas y sanciones
 
-## Requirements
+## Requisitos
 
 - Python 3.8+
-- MySQL 5.7+ (or use Docker)
-- A web browser
+- MySQL 5.7+ (o usar Docker)
+- Navegador web
 
-## Need Help?
+## Ayuda
 
-Check the logs if something goes wrong, or look at the code - it's pretty straightforward!
+Revisa los logs si algo sale mal o consulta el código.
