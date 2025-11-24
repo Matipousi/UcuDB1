@@ -40,7 +40,7 @@ def get_db_config():
     
     # Built-in default credentials
     builtin_config = {
-        'host': '100.100.101.1',
+        'host': '127.0.0.1',
         'user': 'root',
         'password': 'rootpassword',
         'database': 'UCU_SalasDeEstudio'
